@@ -6,6 +6,7 @@ const history=require('history')
 router.use(express.json())
 router.use(express.urlencoded({extended:false}))
 router.get('/getpost',(req,res)=>{
+    console.log("a")
     const data=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
     res.json({err:"0",pdata:data})
 })
