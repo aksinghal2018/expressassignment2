@@ -1,74 +1,166 @@
-const express=require('express')
-const PORT=8899
-const router=express.Router()
-const fs=require('fs')
-const history=require('history')
+const express = require('express')
+const PORT = 8899
+const router = express.Router()
+const fs = require('fs')
+const axios =require('axios')
+const multer=require('multer')
 router.use(express.json())
-router.use(express.urlencoded({extended:false}))
-router.get('/getpost',(req,res)=>{
-    console.log("a")
-    const data=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
-    res.json({err:"0",pdata:data})
+router.use(express.urlencoded({ extended: false }))
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        console.log(file)
+      cb(null, './uploads')
+    },
+    filename: function (req, file, cb) {
+        console.log(file)
+        const date=new Date()
+        const data=date.getMilliseconds()+file.originalname
+        
+      cb(null, data)
+    }
 })
-router.post('/addpost',(req,res)=>{
-    const pname=req.body.pname
-    const pdesc=req.body.pdesc
-    const date=new Date()
-    const data1=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
-    const dataadded={"id":data1.length,"post":pname,"postdesc":pdesc,"date":date.getTime()}
-   // console.log(dataadded)
+var upload = multer({ storage: storage })
+router.get('/getpost', (req, res) => {
+    console.log("a")
+    const data = JSON.parse(fs.readFileSync('Data/post.json', { root: '.' }))
+    res.json({ err: "0", pdata: data })
+})
+router.post('/addpost', (req, res) => {
+    const pname = req.body.pname
+    const pdesc = req.body.pdesc
+    const date = new Date()
+    const data1 = JSON.parse(fs.readFileSync('Data/post.json', { root: '.' }))
+    const dataadded = { "id": data1.length, "post": pname, "postdesc": pdesc, "date": date.getTime() }
+    // console.log(dataadded)
     data1.push(dataadded)
-    fs.writeFileSync('Data/post.json',JSON.stringify(data1))
-    res.json({err:"0",pdata:data1})
+    fs.writeFileSync('Data/post.json', JSON.stringify(data1))
+    res.json({ err: "0", pdata: data1 })
     //res.redirect("/")
 })
-router.get('/update/:id',(req,res)=>{
-    var pname=""
-    var pdesc=""
-    const id=req.params.id
-    const data1=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
+router.get('/update/:id', (req, res) => {
+    var pname = ""
+    var pdesc = ""
+    const id = req.params.id
+    const data1 = JSON.parse(fs.readFileSync('Data/post.json', { root: '.' }))
     //console.log(data1)
-    data1.map((item,index)=>{
+    data1.map((item, index) => {
         //console.log(data1.id==id.toString())
-        if(item.id==id.toString()){
+        if (item.id == id.toString()) {
             //console.log(item)
-            pname=item.post
-            pdesc=item.postdesc
+            pname = item.post
+            pdesc = item.postdesc
         }
     })
-   // console.log(pdesc)
+    // console.log(pdesc)
     res.redirect(`https://newpostserver.herokuapp.com/update/${id}/${pname}/${pdesc}`)
 })
-router.put('/updatepost',(req,res)=>{
-    const pname=req.body.pname
-    const pdesc=req.body.pdesc
-    const id =req.body.id
-    const date=new Date()
-    const data1=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
-    data1.map((item,index)=>{
-        if(item.id==id.toString()){
-                  item.post=pname
-            item.postdesc=pdesc
-            item.date=date.getTime()
+router.put('/updatepost', (req, res) => {
+    const pname = req.body.pname
+    const pdesc = req.body.pdesc
+    const id = req.body.id
+    const date = new Date()
+    const data1 = JSON.parse(fs.readFileSync('Data/post.json', { root: '.' }))
+    data1.map((item, index) => {
+        if (item.id == id.toString()) {
+            item.post = pname
+            item.postdesc = pdesc
+            item.date = date.getTime()
         }
     })
-    fs.writeFileSync('Data/post.json',JSON.stringify(data1))
-    res.json({err:"0",pdata:data1})
+    fs.writeFileSync('Data/post.json', JSON.stringify(data1))
+    res.json({ err: "0", pdata: data1 })
 })
-router.delete('/deletepost/:id',(req,res)=>{
-    const pname=""
-    const pdesc=""
-    const id =req.params.id
-    var indexdata=-1
-    const data1=JSON.parse(fs.readFileSync('Data/post.json',{root:'.'}))
-    data1.map((item,index)=>{
-        if(item.id==id.toString()){
-            indexdata=index
+router.delete('/deletepost/:id', (req, res) => {
+    const pname = ""
+    const pdesc = ""
+    const id = req.params.id
+    var indexdata = -1
+    const data1 = JSON.parse(fs.readFileSync('Data/post.json', { root: '.' }))
+    data1.map((item, index) => {
+        if (item.id == id.toString()) {
+            indexdata = index
         }
     })
-    data1.splice(indexdata,1)
-    fs.writeFileSync('Data/post.json',JSON.stringify(data1))
-    res.json({err:"0",pdata:data1,message:"Delete Data Successfully."})
+    data1.splice(indexdata, 1)
+    fs.writeFileSync('Data/post.json', JSON.stringify(data1))
+    res.json({ err: "0", pdata: data1, message: "Delete Data Successfully." })
 })
 
-module.exports=router;
+router.get('/getuser', (req, res) => {
+    //console.log("a")
+    const data = JSON.parse(fs.readFileSync('Data/user.json', { root: '.' }))
+    res.json({ err: "0", pdata: data })
+})
+router.post('/adduser', (req, res) => {
+    const userid = req.body.userid
+    const username = req.body.username
+    const email = req.body.email
+    const password = req.body.password
+    //const date=new Date()
+    const data1 = JSON.parse(fs.readFileSync('Data/user.json', { root: '.' }))
+    const dataadded = { "id": data1.length, "userid": userid, "username": username, "email": email, "password": password }
+    // console.log(dataadded)
+    data1.push(dataadded)
+    fs.writeFileSync('Data/user.json', JSON.stringify(data1))
+    res.json({ err: "0", pdata: data1 })
+    //res.redirect("/")
+})
+router.get('/getproduct', (req, res) => {
+    //console.log("a")
+    const data = JSON.parse(fs.readFileSync('Data/product.json', { root: '.' }))
+    res.json({ err: "0", pdata: data })
+})
+router.post('/addproduct', (req, res) => {
+    const productid = req.body.productid
+    const productname = req.body.name
+    const productprice = req.body.price
+    const productquantity = req.body.quantity
+    const productdescription=req.body.description
+    //const date=new Date()
+    const data1 = JSON.parse(fs.readFileSync('Data/product.json', { root: '.' }))
+    const dataadded = { "id": data1.length, "productid": productid, "name": productname, "price": productprice, "quantity":productquantity,"description":productdescription}
+    // console.log(dataadded)
+    data1.push(dataadded)
+    console.log(data1)
+    fs.writeFileSync('Data/product.json', JSON.stringify(data1))
+    res.json({ err: "0", pdata: data1 })
+
+    //res.redirect("/")
+})
+
+
+// handle single file upload
+router.post('/profile-upload-single/:id', upload.single('profile-file'), function (req, res, next) {
+    console.log((req.file))
+    const id=req.params.id
+    var indexdata=-1
+    const data=JSON.parse(fs.readFileSync('Data/product.json'))
+    const datafordateitem=req.file.path.split("\\")[1]
+    data.map((item,index)=>{
+        // console.log((item.id.toString())==id)
+        // console.log(typeof(id))
+        
+        if(item.productid.toString()==id){
+
+            item["images"]=datafordateitem
+        }
+    })
+    fs.writeFileSync('Data/product.json',JSON.stringify(data))
+    res.send('<h1>Image Uploaded</h1>')
+  })
+
+  router.post('/profile-upload-multiple', upload.array('profile-files', 12), function (req, res, next) {
+    return res.redirect('/')
+})
+
+  
+router.get('/fileuploaddata/:id',(req,res)=>{
+    const id =req.params.id
+    var data=fs.readFileSync("./index.html")
+   // console.log(id)
+    data=data.toString().replace('iddata',id)
+
+  //  console.log(data)
+    res.send(data)
+})
+module.exports = router;
